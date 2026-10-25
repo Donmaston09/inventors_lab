@@ -1,0 +1,7 @@
+/* Volume 2 (continued) — Robots & Creatures */
+INV.vol(2, [
+["Robot Fish Tail Swish", "flappy", 30, 2, "thin card,string,lolly sticks,paint,googly eyes", "Cut a fish body in two halves and a tail from card.|Hinge the tail to the body with tape.|Run a string from the tail to a stick handle.|Pull the handle to swish the tail.|Decorate with colourful scales.", "A hinge and string let the tail swing from side to side.", "Make a tail that swishes by itself when you shake the stick.", ""],
+["Waving Seaweed Scarer", "crankslider", 25, 1, "cereal box,thin card,lolly sticks,paint", "Paint an under-the-sea scene on a box.|Cut slots for seaweed strips.|Glue each strip to a lolly stick.|Slide the sticks up and down to make the seaweed sway.", "Sliders can move many things at once.", "Make a hidden octopus rise from behind the seaweed.", ""],
+["Hungry Hippo", "crab", 25, 1, "cardboard box,split pins,thin card,paint,pom-poms", "Make a hippo head with a big lower jaw that hinges.|Paint it grey with big nostrils.|Pin a stick handle behind the jaw.|Squeeze and feed pom-pom food.", "A hinge gives a big mouth from a small squeeze.", "How many pom-poms can you fit in one gulp?", ""],
+["Nodding Dog", "cam", 30, 2, "cereal box,wooden skewers,lolly sticks,paint,googly eyes", "Cut a dog head and body from a box.|Make an egg-shaped cam and fix it to a skewer.|Rest the head follower on the cam.|Turn the skewer and watch the dog nod.", "The shape of a cam shapes the nod.", "Teach your dog to shake its head instead of nod.", ""],
+]);

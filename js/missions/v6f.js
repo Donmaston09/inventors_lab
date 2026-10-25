@@ -1,0 +1,5 @@
+/* Volume 6 (continued) — quick experiments */
+INV.vol(6, [
+["Magic Fizz Rocket Car", "balloon", 25, 2, "plastic bottle,baking soda,vinegar,balloons,bottle caps,wooden skewers,drinking straws,tray", "! A grown-up does the fizzing: pour a little vinegar into a bottle and baking soda into a balloon.|Build a car body from a second bottle with straw axles and cap wheels.|! A grown-up fits the balloon on the bottle neck and lifts it so the soda falls in.|Watch gas inflate the balloon.|Never seal the bottle shut and keep vinegar away from eyes.", "A chemical reaction makes gas, which fills the balloon.", "Time how long the balloon takes to fill.", "o"],
+["Fizzing Volcano Pressure Test", "hydraulic", 25, 2, "plastic bottle,baking soda,vinegar,tray,water,food colouring", "! A grown-up helps pour baking soda into a bottle in a tray.|Add coloured water and vinegar.|Watch the fizz rise and overflow.|Measure how high it goes.|Wash up carefully and never taste the mixture.", "Gas bubbles from the reaction push the liquid upwards.", "Compare different amounts of baking soda.", "o"],
+]);

@@ -1,0 +1,30 @@
+"use strict";
+const path = require("path"), fs = require("fs");
+global.window = global;
+const J = path.join(__dirname, "..", "js");
+require(path.join(J, "data-core.js")); require(path.join(J, "missions.js"));
+global.THREE = require("three");
+["models-core.js","models-a.js","models-b.js","models-c.js"].forEach(f => require(path.join(J, f)));
+fs.readdirSync(path.join(J, "missions")).filter(f => /^v\d+[a-z]?\.js$/.test(f)).sort((a,b)=>parseInt(a.slice(1))-parseInt(b.slice(1))||a.localeCompare(b)).forEach(f => require(path.join(J, "missions", f)));
+const INV = global.INV; let bad = 0; const e = m => { bad++; console.log("  ✗ " + m); };
+const M = INV.MISSIONS, titles = new Set(), used = new Set(), per = {};
+M.forEach(m => {
+  per[m.vol] = (per[m.vol] || 0) + 1; used.add(m.model.split(":")[0]);
+  if (titles.has(m.title)) e("duplicate title " + m.title); titles.add(m.title);
+  if (!INV.models[m.model.split(":")[0]]) e(m.id + " unknown model " + m.model);
+  m.mats.forEach(n => { if (!INV.MAT[n]) e(m.id + " unknown material '" + n + "'"); });
+  if (m.steps.length < 3 || m.steps.length > 7) e(m.id + " has " + m.steps.length + " steps");
+  if (m.steps.length < 4) e(m.id + " needs at least 4 steps"); const avg = m.steps.reduce((a, s) => a + s.length, 0) / m.steps.length; if (avg < 36 || m.steps.some(s => s.length < 15)) e(m.id + " steps are too thin (avg " + Math.round(avg) + ")");
+  if (!m.why || m.why.length < 30) e(m.id + " why too short"); if (!m.invent || m.invent.length < 22) e(m.id + " invent too short");
+  const ex = INV.extras(m).length; if (m.vol <= 6 && ex && !/syringe|tubing/.test(m.mats.join())) {} 
+  const elec = m.mats.some(n => /motor|battery|batteries|LED|buzzer|crocodile|brain|servo/.test(n)); if (elec && !m.steps.some(x => x[0] === "!")) e(m.id + " electric build needs a grown-up step"); if (m.vol <= 2 && m.mats.some(n => /motor|battery|batteries|LED|buzzer|switch|crocodile|brain|servo/.test(n))) e(m.id + " has electrics in volumes 1-2");
+  if (/button battery|coin cell|mains|plug socket/i.test(m.steps.join(" "))) e(m.id + " unsafe wording");
+  if (INV.MAT["AA batteries"] && m.mats.indexOf("AA batteries") >= 0 && !m.steps.some(s => s[0] === "!")) e(m.id + " electric build with no grown-up step");
+  if (m.mats.indexOf("balloons") >= 0 && !m.steps.some(s => /grown-up/i.test(s))) e(m.id + " balloon without a grown-up inflating");
+});
+console.log("missions:", M.length, JSON.stringify(per));
+console.log("models used:", used.size + "/" + INV.modelOrder.length, "missing:", INV.modelOrder.filter(i => !used.has(i)).join(",") || "none");
+console.log("quick:", M.filter(INV.isQuick).length, "outdoor:", M.filter(m => m.out).length, "together:", M.filter(m => m.tog).length);
+if (process.argv[2] === "full" && M.length < 500) e("fewer than 500 missions");
+if (process.argv[2] === "titles") console.log("TITLES " + JSON.stringify(Object.fromEntries(M.map(m => [m.id, m.title]))));
+console.log(bad ? "FAILED " + bad : "content OK"); process.exit(bad ? 1 : 0);
