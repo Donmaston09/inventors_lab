@@ -166,17 +166,67 @@
     var tabs = $$(".mtabs button");
     function show(t) {
       tabs.forEach(function (b) { b.setAttribute("aria-selected", b.dataset.t === t); });
-      var pane = $("#pane"); pane.innerHTML = ""; tabFns[t](pane, m);
+      watchStop(); var pane = $("#pane"); pane.innerHTML = ""; tabFns[t](pane, m);
     }
     tabs.forEach(function (b) { b.onclick = function () { show(b.dataset.t); }; });
     show(tab);
-    cleanup = function () { V.unmount(); stopSpeak(); };
+    cleanup = function () { watchStop(); V.unmount(); stopSpeak(); };
   };
+
+
+  /* ----- Watch first: the model assembles itself, step by step, with a voice ----- */
+  var watchTmr = null, watchStop = function () { };
+  function watchPanel(host, m, autoplay) {
+    var steps = m.steps, n = steps.length, idx = -1, playing = false, slow = false, sound = store.prefs.read, finished = false;
+    var vid = INV.VIDEOS && INV.VIDEOS[m.id];
+    host.innerHTML = '<div class="card watch"><h2>🎬 Step 1 · Watch how it goes together</h2>' +
+      '<p class="muted">Watch the 3D model build itself, one step at a time, with a voice to explain. Then put the screen down and try it yourself!</p>' +
+      (vid ? '<video class="wvideo" controls playsinline preload="none" src="' + esc(vid) + '" aria-label="Real build video"></video><p class="muted">The video above shows the real build. The animation below shows it in 3D.</p>' : "") +
+      '<div class="wcap" id="w-cap" aria-live="polite"><b>Press Watch to start.</b></div><div class="wmats" id="w-mats"></div>' +
+      '<div class="wprog" role="progressbar" aria-valuemin="0" aria-valuemax="' + n + '" aria-valuenow="0"><i id="w-bar"></i></div>' +
+      '<div class="row"><button class="btn big" id="w-play">▶ Watch</button><button class="chip-btn" id="w-back" aria-label="Previous step">⏮ Back</button><button class="chip-btn" id="w-next" aria-label="Next step">Next ⏭</button>' +
+      '<button class="chip-btn" id="w-slow" aria-pressed="false">🐢 Slower</button><button class="chip-btn" id="w-snd" aria-pressed="' + !!sound + '">🔊 Voice</button></div>' +
+      '<div id="w-done" class="row" style="margin-top:12px"></div></div>';
+    var cap = $("#w-cap", host), mats = $("#w-mats", host), bar = $("#w-bar", host), play = $("#w-play", host);
+    function matsIn(t) {
+      var low = t.toLowerCase();
+      return m.mats.filter(function (x) { var k = x.toLowerCase().replace(/\s*\(.*\)/, ""); return low.indexOf(k) > -1 || low.indexOf(k.replace(/s$/, "")) > -1; });
+    }
+    function dur(t) { return (2200 + t.length * 85) * (slow ? 1.6 : 1); }
+    function show(i) {
+      idx = i; var t = steps[i], g = t[0] === "!", clean = g ? t.replace(/^!\s*/, "") : t;
+      cap.innerHTML = '<span class="muted">Step ' + (i + 1) + ' of ' + n + '</span>' + (g ? ' <span class="gu-badge">grown-up job</span>' : "") + '<div class="wtxt">' + esc(clean) + '</div>';
+      mats.innerHTML = matsIn(clean).map(function (x) { var mt = INV.MAT[x] || { e: "•" }; return '<span class="pill">' + mt.e + " " + esc(x) + '</span>'; }).join("");
+      bar.style.width = Math.round((i + 1) / n * 100) + "%"; bar.parentNode.setAttribute("aria-valuenow", i + 1);
+      V.setAssemble((i + 1) / n); V.setRun(false);
+      if (sound && playing) speak(t);
+    }
+    function schedule() { clearTimeout(watchTmr); if (!playing) return; watchTmr = setTimeout(function () { if (idx < n - 1) { show(idx + 1); schedule(); } else finish(); }, dur(steps[idx])); }
+    function finish() {
+      playing = false; finished = true; clearTimeout(watchTmr); play.textContent = "↻ Watch again"; V.setAssemble(1);
+      setTimeout(function () { V.setAssemble(null); V.setRun(true); }, 1200);
+      cap.innerHTML = '<b>🎉 All built! Watch it move.</b><div class="wtxt">Now you try it. Gather your materials, put the screen down, and follow the same steps.</div>'; mats.innerHTML = "";
+      store.watched = store.watched || {}; store.watched[m.id] = 1; save();
+      $("#w-done", host).innerHTML = '<a class="btn big good" href="#/build/' + m.id + '?skip=1">🛠 Step 2 · Now you try!</a>';
+    }
+    function toggle() {
+      if (finished || idx < 0) { finished = false; V.setRun(false); $("#w-done", host).innerHTML = ""; V.setAssemble(0); playing = true; play.textContent = "⏸ Pause"; show(0); schedule(); return; }
+      playing = !playing; play.textContent = playing ? "⏸ Pause" : "▶ Keep watching";
+      if (playing) { show(idx); schedule(); } else { clearTimeout(watchTmr); stopSpeak(); }
+    }
+    play.onclick = toggle;
+    $("#w-next", host).onclick = function () { if (idx < n - 1) { finished = false; show(idx + 1); if (playing) schedule(); } else if (idx === n - 1) finish(); };
+    $("#w-back", host).onclick = function () { if (idx > 0) { finished = false; V.setRun(false); show(idx - 1); if (playing) schedule(); } };
+    $("#w-slow", host).onclick = function () { slow = !slow; this.setAttribute("aria-pressed", slow); if (playing) schedule(); };
+    $("#w-snd", host).onclick = function () { sound = !sound; this.setAttribute("aria-pressed", sound); if (!sound) stopSpeak(); else if (playing) speak(steps[idx]); };
+    watchStop = function () { playing = false; clearTimeout(watchTmr); stopSpeak(); V.setAssemble(null); watchStop = function () { }; };
+    if (autoplay) setTimeout(toggle, 700);
+  }
 
   var tabFns = {};
   tabFns.build = function (pane, m) {
     var ex = INV.extras(m), gu = m.steps.some(function (s) { return s[0] === "!"; });
-    var h = "";
+    var h = '<div id="watchhost"></div>';
     if (m.tog) h += '<div class="callout"><b>👨‍👩‍👧 Build together.</b> You’re the Chief Inventor and make the decisions. Your grown-up is the Safety Officer and helps with the jobs marked <span class="gu-badge">grown-up</span>.</div>';
     if (ex.length) h += '<div class="callout safe"><b>🔌 Little extras needed:</b> ' + ex.map(esc).join(", ") + '. A grown-up should check every circuit. Use only AA batteries in a holder (3 V). Never use button batteries or mains power.</div>';
     h += '<h2>What you need</h2><ul class="mats">' + m.mats.map(function (n) {
@@ -184,8 +234,8 @@
       return '<li><label><input type="checkbox" data-mat="' + esc(n) + '"' + (store.have[n] ? " checked" : "") + '><span>' + mt.e + " " + esc(n) + '</span>' + (x ? '<span class="xt">little extra</span>' : "") + '</label></li>';
     }).join("") + '</ul><p class="muted">Basics: ' + INV.BASICS.join(", ") + '.</p>';
     h += '<h2>Steps</h2><ol class="steps">' + m.steps.map(function (s) { var g = s[0] === "!"; return '<li' + (g ? ' class="gu"' : "") + '><div>' + (g ? '<span class="gu-badge">grown-up</span>' : "") + esc(g ? s.replace(/^!\s*/, "") : s) + '</div></li>'; }).join("") + '</ol>';
-    h += '<div class="row"><a class="btn big" href="#/build/' + m.id + '">▶ Step-by-step mode</a><button class="btn good" id="done-b">I built it! ✅</button></div><p class="muted" style="margin-top:10px">Tip: step-by-step mode reads each step aloud, so you can put the screen down and build.</p>';
-    pane.innerHTML = h;
+    h += '<div class="row"><a class="btn big" href="#/build/' + m.id + '?skip=1">▶ Step 2 · Step-by-step mode</a><button class="btn good" id="done-b">I built it! ✅</button></div><p class="muted" style="margin-top:10px">Tip: step-by-step mode reads each step aloud, so you can put the screen down and build.</p>';
+    pane.innerHTML = h; watchStop(); watchPanel($("#watchhost", pane), m, /[?&]watch=1/.test(location.hash));
     $$("[data-mat]", pane).forEach(function (c) { c.onchange = function () { if (c.checked) store.have[c.dataset.mat] = 1; else delete store.have[c.dataset.mat]; save(); }; });
     $("#done-b", pane).onclick = function () { finish(m, "b", "Built! Now find out how it works…"); };
   };
@@ -223,7 +273,13 @@
     shell("lab"); var i = 0, dim = false, wl = null, read = store.prefs.read, tmr = null, started = Date.now(), breakShown = false;
     app.innerHTML = ""; var bm = document.createElement("div"); bm.className = "bm"; bm.setAttribute("role", "dialog"); bm.setAttribute("aria-label", "Step-by-step build"); document.body.appendChild(bm);
     function wake(on) { try { if (on && navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { wl = l; }); else if (wl) { wl.release(); wl = null; } } catch (e) { } }
+    var intro = !(store.watched && store.watched[m.id]) && !/skip=1/.test(location.hash);
+    function drawIntro() {
+      bm.innerHTML = '<div class="head"><a class="chip-btn" href="#/m/' + m.id + '" id="bm-x" aria-label="Close">✕</a></div><div class="step"><div class="n">' + esc(m.title) + '</div><div class="txt">Want to watch how it goes together first?</div><p class="muted" style="font-size:1.1rem">It takes about a minute. Watching first makes the building much easier.</p><div class="row"><a class="btn big good" href="#/m/' + m.id + '?watch=1">🎬 Watch first (recommended)</a><button class="btn alt big" id="bm-skip">Skip, let’s build</button></div></div>';
+      $("#bm-skip").onclick = function () { intro = false; draw(); say(); }; $("#bm-x").onclick = function () { end(); };
+    }
     function draw() {
+      if (intro) return drawIntro();
       var s = m.steps[i], g = s[0] === "!", last = i === m.steps.length - 1;
       bm.innerHTML = '<div class="head"><a class="chip-btn" href="#/m/' + m.id + '" id="bm-x" aria-label="Close step-by-step">✕</a><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="' + m.steps.length + '" aria-valuenow="' + (i + 1) + '"><i style="width:' + Math.round((i + 1) / m.steps.length * 100) + '%"></i></div><button class="chip-btn" id="bm-read" aria-pressed="' + read + '">🔊</button><button class="chip-btn" id="bm-dim" aria-pressed="' + dim + '">🌙</button></div>' +
         '<div class="step"><div class="n">' + esc(m.title) + ' · Step ' + (i + 1) + ' of ' + m.steps.length + '</div>' + (g ? '<div><span class="gu-badge" style="font-size:1rem;padding:4px 14px">Grown-up job</span></div>' : "") + '<div class="txt">' + esc(g ? s.replace(/^!\s*/, "") : s) + '</div>' +
@@ -241,7 +297,7 @@
     function say() { if (read) speak(m.steps[i]); }
     function end() { stopSpeak(); wake(false); clearInterval(tmr); bm.remove(); }
     tmr = setInterval(function () { if (!breakShown && (Date.now() - started) / 60000 >= store.prefs.breakMin) { breakShown = true; screenBreak(function () { started = Date.now(); breakShown = false; }); } }, 15000);
-    draw(); say(); cleanup = function () { end(); };
+    draw(); if (!intro) say(); cleanup = function () { end(); };
   };
   function screenBreak(after) {
     chime([880, 660, 880]); var b = document.createElement("div"); b.className = "break"; b.setAttribute("role", "alertdialog"); b.setAttribute("aria-label", "Screen break");

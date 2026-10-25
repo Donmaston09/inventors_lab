@@ -35,10 +35,16 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
     await go(pg, "/m/v4-01?tab=understand", 1200, "understand-gear");
     if (!(await pg.$(".sim svg"))) bad("understand tab sim missing");
     await go(pg, "/m/v4-01?tab=invent", 700, "invent-tab");
-    await go(pg, "/build/v1-01", 800, "buildmode");
+    await go(pg, "/build/v1-01", 800, "buildmode-intro");
+    if (!(await pg.$("#bm-skip"))) bad("watch-first intro missing");
+    await pg.click("#bm-skip"); await pg.waitForTimeout(300); await pg.screenshot({ path: path.join(OUT, "buildmode.png") });
     if (!(await pg.$(".bm .txt"))) bad("build mode missing");
     await pg.click("#bm-next"); await pg.waitForTimeout(200);
     await pg.click("#bm-dim"); await pg.screenshot({ path: path.join(OUT, "buildmode-dim.png") });
+    await go(pg, "/m/v1-01", 1500, "watch-panel");
+    if (!(await pg.$(".watch #w-play"))) bad("watch panel missing");
+    await pg.click("#w-play"); await pg.waitForTimeout(500);
+    if (!(await pg.$eval("#w-cap", e => /Step 1 of/.test(e.textContent)))) bad("watch did not start");
     await go(pg, "/materials", 600, "materials");
     await go(pg, "/invent", 600); await pg.click("#spin"); await pg.waitForTimeout(1600); await pg.screenshot({ path: path.join(OUT, "invent.png") });
     await go(pg, "/templates", 400, "templates");

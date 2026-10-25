@@ -259,7 +259,7 @@
     V.clearHighlight(); V.sel = -1;
     var b = INV.build(spec, seed);
     V.built = b; V.stage.setModel(b);
-    V.ph = b.meta.rest || 0; V.run = 0; V.runT = 0; V.explode = 0; V.explodeT = 0; V.groundOff = 0;
+    V.ph = b.meta.rest || 0; V.run = 0; V.runT = 0; V.explode = 0; V.explodeT = 0; V.groundOff = 0; V.asm = null; V.asmT = null; V._wasAsm = false;
     V.resetView(); frameModel(); buildLabels();
     if (V.cb.loaded) V.cb.loaded(b);
     return b;
@@ -267,6 +267,8 @@
   V.setSpin = function (on) { V.spin = !!on; touch(); };
   V.setRun = function (on) { V.runT = on ? 1 : 0; };
   V.setExplode = function (k) { V.explodeT = k; };
+  /* Assembly "watch" mode: parts appear one by one (p from 0 to 1); null switches it off */
+  V.setAssemble = function (p) { if (p == null) { V.asmT = null; V.asm = null; } else { if (V.asm == null) V.asm = 0; V.asmT = p; } touch(); };
   V.setLabels = function (on) { V.labelsOn = !!on; if (V.labelHost) V.labelHost.style.display = on ? "" : "none"; };
   V.state = function () { return { spin: V.spin, run: V.runT > 0, labels: V.labelsOn, explode: V.explodeT }; };
   V.parts = function () { return V.built ? V.built.parts : []; };
@@ -291,9 +293,21 @@
     else if (V._lit) { V.stage.key.intensity = 1.0; V.stage.hemi.intensity = 0.62; V._lit = false; }
     if (out.speed) { V.groundOff += out.speed * dt; V.stage.platMat.map.offset.x = V.groundOff / 2.5; }
     // explode
-    V.explode += (V.explodeT - V.explode) * (1 - Math.exp(-dt * 6));
-    if (V.explode > 0.002 || V._wasExploded) {
-      INV.explode(V.built, V.explode * 1.0); V._wasExploded = V.explode > 0.002;
+    if (V.asm != null && V.built) {
+      V.asm += (V.asmT - V.asm) * (1 - Math.exp(-dt * 2.6));
+      if (Math.abs(V.asmT - V.asm) < 0.0005) V.asm = V.asmT;
+      var pn = V.built.parts.length, ax = V.asm * pn;
+      V.built.parts.forEach(function (pt, j) {
+        var t = Math.max(0, Math.min(1, ax - j)); t = t * t * (3 - 2 * t);
+        pt.obj.visible = t > 0.02; pt.obj.position.copy(pt.base).addScaledVector(pt.ex, (1 - t) * 1.5);
+      });
+      V._wasAsm = true; touch();
+    } else {
+      if (V._wasAsm && V.built) { V.built.parts.forEach(function (pt) { pt.obj.visible = true; pt.obj.position.copy(pt.base); }); V._wasAsm = false; }
+      V.explode += (V.explodeT - V.explode) * (1 - Math.exp(-dt * 6));
+      if (V.explode > 0.002 || V._wasExploded) {
+        INV.explode(V.built, V.explode * 1.0); V._wasExploded = V.explode > 0.002;
+      }
     }
     // camera
     var st = V.stage, cam = st.camera, d = V.baseDist * V.zoom;

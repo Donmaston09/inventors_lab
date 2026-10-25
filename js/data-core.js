@@ -167,3 +167,6 @@
     { id: "s10", e: "⭐", t: "Triple Star", d: "Finish Build, Understand AND Invent on 10 missions." }
   ];
 })();
+
+/* Optional real build videos. Add entries like "v3-04": "videos/v3-04.mp4" (files you film yourself and host beside the app). */
+INV.VIDEOS = INV.VIDEOS || {};

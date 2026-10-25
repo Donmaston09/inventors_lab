@@ -11,6 +11,10 @@ Created by **Anthony Onoja, PhD** · donmaston09@gmail.com · [Buy me a coffee](
 - Household materials guide, inventor templates (printable), My Inventions, badges, passport, grown-ups area
 - Interactive explainers: gears, levers, pulleys, circuits, belts
 
+## Watch first, then build
+Every mission opens with **Step 1 · Watch how it goes together**: the 3D model assembles itself part by part, with each step shown, spoken in an English voice and the materials highlighted. Then **Step 2 · Now you try** opens screen-down Build Mode. This is an animated 3D walkthrough generated for all 502 missions, not filmed footage.
+To add a real filmed video for any mission, put an mp4 in a `videos/` folder next to the app and add a line to `INV.VIDEOS` at the end of `js/data-core.js`, for example `INV.VIDEOS["v3-04"] = "videos/v3-04.mp4";`. It then plays above the animation. (Host your own files rather than embedding YouTube, so the app stays free of tracking.)
+
 ## Run it
 - Open `dist/inventors-lab.html` (single file, works offline), or
 - `python3 -m http.server` in this folder and open http://localhost:8000 (enables the service worker / install).
