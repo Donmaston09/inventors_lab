@@ -168,5 +168,5 @@
   ];
 })();
 
-/* Optional real build videos. Add entries like "v3-04": "videos/v3-04.mp4" (files you film yourself and host beside the app). */
+/* Optional real build videos. Add entries like "v3-04": "videos/v3-04.mp4" (files you film yourself and host beside the app), or "yt:VIDEOID" (11 characters) for an optional click-to-load YouTube embed. */
 INV.VIDEOS = INV.VIDEOS || {};

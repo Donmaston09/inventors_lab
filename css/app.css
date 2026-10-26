@@ -192,3 +192,6 @@ details { border: 3px solid var(--line); border-radius: 14px; background: var(--
 .wprog i { display: block; height: 100%; width: 0; background: var(--good); transition: width .4s; }
 .wvideo { width: 100%; max-height: 360px; border: 3px solid var(--line); border-radius: 14px; background: #000; margin: 6px 0; }
 @media (prefers-reduced-motion: reduce) { .wprog i { transition: none; } }
+
+.ytgate { background: #fff; color: #1f2a44; border: 3px dashed var(--line); border-radius: 14px; padding: 12px 14px; margin: 8px 0; }
+.ytgate iframe { aspect-ratio: 16/9; height: auto; max-height: none; border: 0; }
