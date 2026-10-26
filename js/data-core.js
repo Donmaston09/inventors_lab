@@ -170,3 +170,15 @@
 
 /* Optional real build videos. Add entries like "v3-04": "videos/v3-04.mp4" (files you film yourself and host beside the app), or "yt:VIDEOID" (11 characters) for an optional click-to-load YouTube embed. */
 INV.VIDEOS = INV.VIDEOS || {};
+
+/* Third-party YouTube videos (click-to-load). Matched by title and channel only; review before relying on them.
+   To remove one, delete its line. Credits show beside the play button. */
+(function () {
+  var V = INV.VIDEOS, C = INV.VIDEO_CREDITS = INV.VIDEO_CREDITS || {};
+  function add(ids, yt, credit) { ids.forEach(function (id) { V[id] = "yt:" + yt; C[id] = credit; }); }
+  add(["v3-41"], "80ibLACM2xo", "CraftMania");
+  add(["v1-12", "v3-46"], "72xl4NYDicA", "Fun Crafts DIY");
+  add(["v3-04", "v3-42"], "vlPHB-AoHSk", "Just Making");
+  add(["v9-07", "v9-17", "v9-39"], "mzw2Vul52Hs", "Boston Children's Museum");
+  add(["v1-17", "v1-66"], "3QabS9riepE", "AssistanceTV-eng");
+})();
